@@ -1,0 +1,54 @@
+[build-system]
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
+
+[project]
+name = "inditok"
+version = "0.1.0"
+description = "Rust-backed HuggingFace-compatible tokenizer primitives for Indian languages."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "inditok contributors" }]
+keywords = ["tokenizer", "nlp", "indic", "hindi", "telugu", "bpe"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Rust",
+  "Topic :: Text Processing :: Linguistic",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "maturin>=1.5,<2",
+  "pytest>=8",
+  "transformers>=4.40",
+  "tokenizers>=0.15",
+]
+bench = [
+  "tiktoken>=0.7",
+  "transformers>=4.40",
+  "tokenizers>=0.15",
+]
+
+[project.scripts]
+inditok = "inditok.cli:main"
+
+[tool.maturin]
+manifest-path = "rust/inditok-core/Cargo.toml"
+python-source = "python"
+module-name = "inditok._inditok"
+features = ["pyo3/extension-module"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+

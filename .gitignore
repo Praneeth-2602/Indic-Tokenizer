@@ -1,0 +1,17 @@
+target/
+cargo-target/
+__pycache__/
+*.py[cod]
+*.pyd
+*.pdb
+*.so
+*.dylib
+*.zip
+.pytest_cache/
+.pytest_tmp/
+.ruff_cache/
+.mypy_cache/
+.venv/
+dist/
+build/
+*.egg-info/

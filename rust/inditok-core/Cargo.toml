@@ -1,0 +1,20 @@
+[package]
+name = "inditok-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Rust tokenizer core for inditok."
+
+[lib]
+name = "inditok_core"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+hashbrown = { version = "0.14", features = ["serde"] }
+pyo3 = { version = "0.22", features = ["abi3-py39", "serde"] }
+rayon = "1.10"
+regex = "1.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+unicode-normalization = "0.1"
+unicode-segmentation = "1.11"
