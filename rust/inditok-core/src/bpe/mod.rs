@@ -1,4 +1,4 @@
-use crate::tokenizer::{TokenizerError, SPACE_TOKEN, UNK_TOKEN};
+use crate::tokenizer::{TokenizerError, PAD_TOKEN, SPACE_TOKEN, UNK_TOKEN};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -94,16 +94,23 @@ impl BpeModel {
         let mut tokens = Vec::with_capacity(symbols.len());
         let mut offsets = Vec::with_capacity(symbols.len());
         for symbol in symbols {
-            let id = self.vocab.get(&symbol.text).copied().unwrap_or(self.unk_id);
-            ids.push(id);
-            offsets.push(symbol.offset);
-            tokens.push(
-                if id == self.unk_id && !self.vocab.contains_key(&symbol.text) {
+            if let Some(id) = self.vocab.get(&symbol.text) {
+                ids.push(*id);
+                offsets.push(symbol.offset);
+                tokens.push(symbol.text);
+                continue;
+            }
+            for byte in symbol.text.as_bytes() {
+                let byte_token = format!("<0x{byte:02X}>");
+                let id = self.vocab.get(&byte_token).copied().unwrap_or(self.unk_id);
+                ids.push(id);
+                offsets.push(symbol.offset);
+                tokens.push(if id == self.unk_id {
                     UNK_TOKEN.to_string()
                 } else {
-                    symbol.text
-                },
-            );
+                    byte_token
+                });
+            }
         }
 
         PieceEncoding {
@@ -114,17 +121,34 @@ impl BpeModel {
     }
 
     pub fn decode(&self, ids: &[u32]) -> String {
-        ids.iter()
-            .filter_map(|id| self.id_to_token.get(id))
-            .filter(|token| token.as_str() != UNK_TOKEN)
-            .map(|token| {
-                if token == SPACE_TOKEN {
-                    " ".to_string()
-                } else {
-                    token.clone()
-                }
-            })
-            .collect::<String>()
+        let mut bytes = Vec::new();
+        let mut result = String::new();
+
+        for id in ids {
+            let Some(token) = self.id_to_token.get(id) else {
+                continue;
+            };
+
+            if token == UNK_TOKEN || token == PAD_TOKEN {
+                flush_bytes(&mut bytes, &mut result);
+                continue;
+            }
+
+            if let Some(byte) = parse_byte_token(token) {
+                bytes.push(byte);
+                continue;
+            }
+
+            flush_bytes(&mut bytes, &mut result);
+            if token == SPACE_TOKEN {
+                result.push(' ');
+            } else {
+                result.push_str(token);
+            }
+        }
+
+        flush_bytes(&mut bytes, &mut result);
+        result
     }
 
     pub fn vocab(&self) -> &HashMap<String, u32> {
@@ -150,6 +174,21 @@ impl BpeModel {
             };
             symbols.splice(idx..=idx + 1, [merged]);
         }
+    }
+}
+
+fn parse_byte_token(token: &str) -> Option<u8> {
+    if token.len() == 6 && token.starts_with("<0x") && token.ends_with('>') {
+        u8::from_str_radix(&token[3..5], 16).ok()
+    } else {
+        None
+    }
+}
+
+fn flush_bytes(bytes: &mut Vec<u8>, result: &mut String) {
+    if !bytes.is_empty() {
+        result.push_str(&String::from_utf8_lossy(bytes));
+        bytes.clear();
     }
 }
 

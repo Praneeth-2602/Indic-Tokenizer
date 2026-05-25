@@ -51,24 +51,30 @@ impl PyIndicTokenizer {
         })
     }
 
-    #[pyo3(signature = (text, lang=None))]
-    fn encode(&self, text: &str, lang: Option<&str>) -> Vec<u32> {
-        self.inner.encode_with_lang(text, lang).ids
+    #[pyo3(signature = (text, lang=None, code_mix=false))]
+    fn encode(&self, text: &str, lang: Option<&str>, code_mix: bool) -> Vec<u32> {
+        self.inner.encode_with_options(text, lang, code_mix).ids
     }
 
-    #[pyo3(signature = (text, lang=None))]
-    fn encode_with_tokens(&self, text: &str, lang: Option<&str>) -> EncodeOutput {
-        self.inner.encode_with_lang(text, lang)
+    #[pyo3(signature = (text, lang=None, code_mix=false))]
+    fn encode_with_tokens(&self, text: &str, lang: Option<&str>, code_mix: bool) -> EncodeOutput {
+        self.inner.encode_with_options(text, lang, code_mix)
     }
 
     fn decode(&self, ids: Vec<u32>) -> String {
         self.inner.decode(&ids)
     }
 
-    #[pyo3(signature = (texts, lang=None))]
-    fn encode_batch(&self, texts: Vec<String>, lang: Option<&str>) -> Vec<Vec<u32>> {
+    #[pyo3(signature = (texts, lang=None, code_mix=false, num_threads=None))]
+    fn encode_batch(
+        &self,
+        texts: Vec<String>,
+        lang: Option<&str>,
+        code_mix: bool,
+        num_threads: Option<usize>,
+    ) -> Vec<Vec<u32>> {
         self.inner
-            .encode_batch_with_lang(&texts, lang)
+            .encode_batch_with_options(&texts, lang, code_mix, num_threads)
             .into_iter()
             .map(|item| item.ids)
             .collect()
@@ -79,13 +85,24 @@ impl PyIndicTokenizer {
         self.inner.normalize_with_lang(text, lang)
     }
 
-    #[pyo3(signature = (text, lang=None))]
-    fn pre_tokenize(&self, text: &str, lang: Option<&str>) -> Vec<String> {
+    #[pyo3(signature = (text, lang=None, code_mix=false))]
+    fn pre_tokenize(&self, text: &str, lang: Option<&str>, code_mix: bool) -> Vec<String> {
+        if code_mix {
+            return self.inner.encode_with_options(text, lang, true).tokens;
+        }
         self.inner.pre_tokenize_with_lang(text, lang)
     }
 
     fn vocab_size(&self) -> usize {
         self.inner.vocab_size()
+    }
+
+    fn get_vocab(&self) -> std::collections::HashMap<String, u32> {
+        self.inner
+            .vocab()
+            .iter()
+            .map(|(token, id)| (token.clone(), *id))
+            .collect()
     }
 
     #[pyo3(signature = (path))]

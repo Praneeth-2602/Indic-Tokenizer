@@ -53,4 +53,17 @@ mod tests {
             "\u{0D7B}"
         );
     }
+
+    #[test]
+    fn preserves_virama_adjacent_zwnj_and_strips_noise() {
+        let normalizer = IndicNormalizer;
+        assert_eq!(
+            normalizer.normalize_with_lang("ক্\u{200C}ষ", Some("bn")),
+            "ক্\u{200C}ষ"
+        );
+        assert_eq!(
+            normalizer.normalize_with_lang("a\u{200C}b", Some("hi")),
+            "ab"
+        );
+    }
 }
