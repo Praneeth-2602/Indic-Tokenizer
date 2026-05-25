@@ -1,0 +1,41 @@
+{
+  "missing_langs": [],
+  "corpus_audit": {
+    "hi": {
+      "lines": 100,
+      "duplicate_lines": 0,
+      "duplicate_rate": 0.0,
+      "non_native_script_lines": 0,
+      "non_native_script_rate": 0.0,
+      "htmlish_lines": 0,
+      "avg_chars_per_line": 53.9
+    },
+    "bn": {
+      "lines": 88,
+      "duplicate_lines": 0,
+      "duplicate_rate": 0.0,
+      "non_native_script_lines": 0,
+      "non_native_script_rate": 0.0,
+      "htmlish_lines": 0,
+      "avg_chars_per_line": 51.26136363636363
+    },
+    "ta": {
+      "lines": 60,
+      "duplicate_lines": 0,
+      "duplicate_rate": 0.0,
+      "non_native_script_lines": 0,
+      "non_native_script_rate": 0.0,
+      "htmlish_lines": 0,
+      "avg_chars_per_line": 60.43333333333333
+    },
+    "te": {
+      "lines": 59,
+      "duplicate_lines": 0,
+      "duplicate_rate": 0.0,
+      "non_native_script_lines": 0,
+      "non_native_script_rate": 0.0,
+      "htmlish_lines": 0,
+      "avg_chars_per_line": 57.54237288135593
+    }
+  }
+}
