@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 UNK_TOKEN = "<unk>"
+PAD_TOKEN = "<pad>"
 SPACE_TOKEN = " "
 
 
@@ -63,7 +64,14 @@ class IndicTokenizer:
             return _normalize_perso_arabic(text)
         return _base_normalize(text)
 
-    def pre_tokenize(self, text: str, lang: str | None = None) -> list[str]:
+    def pre_tokenize(
+        self, text: str, lang: str | None = None, code_mix: bool = False
+    ) -> list[str]:
+        if code_mix:
+            pieces: list[str] = []
+            for span in detect_script_spans(text):
+                pieces.extend(self.pre_tokenize(span["text"], _script_to_lang(span["script"], lang), False))
+            return pieces
         text = self.normalize(text, lang)
         pieces = []
         current = []
@@ -79,10 +87,24 @@ class IndicTokenizer:
         _flush(current, pieces)
         return pieces
 
-    def encode(self, text: str, lang: str | None = None) -> list[int]:
-        return self.encode_with_tokens(text, lang).ids
+    def encode(self, text: str, lang: str | None = None, code_mix: bool = False) -> list[int]:
+        return self.encode_with_tokens(text, lang, code_mix).ids
 
-    def encode_with_tokens(self, text: str, lang: str | None = None) -> EncodeOutput:
+    def encode_with_tokens(
+        self, text: str, lang: str | None = None, code_mix: bool = False
+    ) -> EncodeOutput:
+        if code_mix:
+            ids: list[int] = []
+            tokens: list[str] = []
+            offsets: list[tuple[int, int]] = []
+            for span in detect_script_spans(text):
+                span_lang = _script_to_lang(span["script"], lang)
+                encoded = self.encode_with_tokens(span["text"], span_lang, False)
+                ids.extend(encoded.ids)
+                tokens.extend(encoded.tokens)
+                offsets.extend((span["start"] + start, span["start"] + end) for start, end in (encoded.offsets or []))
+            return EncodeOutput(ids, tokens, lang, offsets)
+
         normalized = self.normalize(text, lang)
         ids = []
         tokens = []
@@ -99,8 +121,15 @@ class IndicTokenizer:
             search_start = piece_start + len(piece)
         return EncodeOutput(ids, tokens, lang, offsets)
 
-    def encode_batch(self, texts: Iterable[str], lang: str | None = None) -> list[list[int]]:
-        return [self.encode(text, lang) for text in texts]
+    def encode_batch(
+        self,
+        texts: Iterable[str],
+        lang: str | None = None,
+        code_mix: bool = False,
+        num_threads: int | None = None,
+    ) -> list[list[int]]:
+        del num_threads
+        return [self.encode(text, lang, code_mix) for text in texts]
 
     def fertility(self, texts: Iterable[str], lang: str | None = None) -> object:
         texts = list(texts)
@@ -135,14 +164,35 @@ class IndicTokenizer:
         return unicodedata.normalize("NFC", "".join(out).strip())
 
     def decode(self, ids: Iterable[int]) -> str:
-        return "".join(
-            self.id_to_token.get(int(idx), "")
-            for idx in ids
-            if self.id_to_token.get(int(idx), UNK_TOKEN) != UNK_TOKEN
-        )
+        byte_buf = bytearray()
+        result: list[str] = []
+
+        def flush_bytes() -> None:
+            if byte_buf:
+                result.append(byte_buf.decode("utf-8", errors="replace"))
+                byte_buf.clear()
+
+        for idx in ids:
+            token = self.id_to_token.get(int(idx))
+            if token is None:
+                continue
+            if token in {UNK_TOKEN, PAD_TOKEN}:
+                flush_bytes()
+                continue
+            byte_value = _byte_token_value(token)
+            if byte_value is not None:
+                byte_buf.append(byte_value)
+                continue
+            flush_bytes()
+            result.append(" " if token == SPACE_TOKEN else token)
+        flush_bytes()
+        return "".join(result)
 
     def vocab_size(self) -> int:
         return len(self.vocab)
+
+    def get_vocab(self) -> dict[str, int]:
+        return dict(self.vocab)
 
     def _encode_piece(self, piece: str) -> EncodeOutput:
         if piece in self.vocab:
@@ -162,14 +212,31 @@ class IndicTokenizer:
                 (symbols[idx][0] + symbols[idx + 1][0], symbols[idx][1], symbols[idx + 1][2])
             ]
 
-        tokens = [symbol if symbol in self.vocab else UNK_TOKEN for symbol, _, _ in symbols]
-        offsets = [(start, end) for _, start, end in symbols]
-        return EncodeOutput([int(self.vocab.get(token, self.unk_id)) for token in tokens], tokens, offsets=offsets)
+        ids: list[int] = []
+        tokens: list[str] = []
+        offsets: list[tuple[int, int]] = []
+        for symbol, start, end in symbols:
+            if symbol in self.vocab:
+                ids.append(int(self.vocab[symbol]))
+                tokens.append(symbol)
+                offsets.append((start, end))
+                continue
+            for byte in symbol.encode("utf-8"):
+                byte_token = f"<0x{byte:02X}>"
+                ids.append(int(self.vocab.get(byte_token, self.unk_id)))
+                tokens.append(byte_token if byte_token in self.vocab else UNK_TOKEN)
+                offsets.append((start, end))
+        return EncodeOutput(ids, tokens, offsets=offsets)
 
 
 def _default_vocab() -> dict[str, int]:
     tokens = [
+        PAD_TOKEN,
+        "<s>",
+        "</s>",
+        "<mask>",
         UNK_TOKEN,
+        *[f"<0x{idx:02X}>" for idx in range(256)],
         SPACE_TOKEN,
         "न",
         "म",
@@ -211,6 +278,15 @@ def _default_vocab() -> dict[str, int]:
     if len(tokens) != len(set(tokens)):
         raise ValueError("built-in vocabulary contains duplicate token strings")
     return {token: idx for idx, token in enumerate(tokens)}
+
+
+def _byte_token_value(token: str) -> int | None:
+    if len(token) == 6 and token.startswith("<0x") and token.endswith(">"):
+        try:
+            return int(token[3:5], 16)
+        except ValueError:
+            return None
+    return None
 
 
 _SPLIT_BOUNDARIES = set("।॥،؛؟.,!?;:()[]{}\\/|@#$%^&*+=<>`~")
@@ -398,6 +474,62 @@ def _script_family(ch: str) -> str:
     if ch in _SPLIT_BOUNDARIES:
         return "punctuation"
     return "other"
+
+
+def detect_script_spans(text: str) -> list[dict[str, object]]:
+    spans: list[dict[str, object]] = []
+    current_script: str | None = None
+    current_text: list[str] = []
+    current_start = 0
+    byte_pos = 0
+
+    for ch in text:
+        script = "other" if ch.isspace() else _script_family(ch)
+        char_len = len(ch.encode("utf-8"))
+        if current_script is not None and script != current_script:
+            spans.append(
+                {
+                    "script": current_script,
+                    "text": "".join(current_text),
+                    "start": current_start,
+                    "end": byte_pos,
+                }
+            )
+            current_text = []
+            current_start = byte_pos
+        current_script = script
+        current_text.append(ch)
+        byte_pos += char_len
+
+    if current_script is not None:
+        spans.append(
+            {
+                "script": current_script,
+                "text": "".join(current_text),
+                "start": current_start,
+                "end": byte_pos,
+            }
+        )
+    return spans
+
+
+def _script_to_lang(script: object, fallback: str | None = None) -> str | None:
+    return {
+        "devanagari": "hi",
+        "bengali": "bn",
+        "gurmukhi": "pa",
+        "gujarati": "gu",
+        "odia": "or",
+        "tamil": "ta",
+        "telugu": "te",
+        "kannada": "kn",
+        "malayalam": "ml",
+        "persian_arabic": "ur",
+        "ol_chiki": "sat",
+        "meetei_mayek": "mni",
+        "tirhuta": "mai",
+        "latin": None,
+    }.get(str(script), fallback)
 
 
 def _load_merges(path: Path) -> list[tuple[str, str]]:
