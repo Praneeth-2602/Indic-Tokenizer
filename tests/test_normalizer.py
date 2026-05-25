@@ -31,3 +31,9 @@ def test_dravidian_duplicate_viramas_collapse():
     assert tok.normalize("க்\u0bcd", lang="ta") == "க்"
     assert tok.normalize("క్\u0c4d", lang="te") == "క్"
     assert tok.normalize("ಕ್\u0ccd", lang="kn") == "ಕ್"
+
+
+def test_zwj_zwnj_preserved_only_near_virama():
+    tok = IndicTokenizer()
+    assert tok.normalize("ক্\u200cষ", lang="bn") == "ক্\u200cষ"
+    assert tok.normalize("a\u200cb", lang="hi") == "ab"
