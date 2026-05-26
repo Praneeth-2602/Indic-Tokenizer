@@ -31,8 +31,9 @@ def build_parser() -> argparse.ArgumentParser:
     norm.add_argument("--lang")
 
     train = sub.add_parser("train", help="Train an inditok model")
-    train.add_argument("--data-dir", required=True)
-    train.add_argument("--output-dir", required=True)
+    train.add_argument("--config")
+    train.add_argument("--data-dir")
+    train.add_argument("--output-dir")
     train.add_argument("--vocab-size", type=int, default=64000)
     train.add_argument("--langs", default=None)
     train.add_argument("--model-type", default="bpe")
@@ -102,10 +103,14 @@ def main(argv: list[str] | None = None) -> int:
         cmd = [
             sys.executable,
             str(script),
-            "--data-dir",
-            args.data_dir,
-            "--output-dir",
-            args.output_dir,
+        ]
+        if args.config:
+            cmd.extend(["--config", args.config])
+        if args.data_dir:
+            cmd.extend(["--data-dir", args.data_dir])
+        if args.output_dir:
+            cmd.extend(["--output-dir", args.output_dir])
+        cmd.extend([
             "--vocab-size",
             str(args.vocab_size),
             "--model-type",
@@ -116,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
             args.morpheme_hints,
             "--min-line-chars",
             str(args.min_line_chars),
-        ]
+        ])
         if not args.clean_corpus:
             cmd.append("--no-clean-corpus")
         if args.langs:

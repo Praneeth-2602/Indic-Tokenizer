@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import argparse
 import statistics
+import sys
 import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT / "python") not in sys.path:
+    sys.path.insert(0, str(ROOT / "python"))
 
 from inditok import IndicTokenizer
 
@@ -38,6 +44,7 @@ def measure(name: str, encode_fn) -> dict[str, float | str]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--include-optional", action="store_true")
+    parser.add_argument("--assert-min-chars-per-second", type=float, default=None)
     args = parser.parse_args()
 
     results = [measure("inditok", IndicTokenizer().encode)]
@@ -65,9 +72,17 @@ def main() -> int:
             "p50={p50_latency_ms:.3f} ms, fertility={token_fertility:.3f}".format(**row)
         )
 
+    if args.assert_min_chars_per_second is not None:
+        inditok_result = next(row for row in results if row["name"] == "inditok")
+        if float(inditok_result["chars_per_second"]) < args.assert_min_chars_per_second:
+            print(
+                "inditok throughput below threshold: "
+                f"{inditok_result['chars_per_second']:.0f} < {args.assert_min_chars_per_second:.0f}"
+            )
+            return 1
+
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

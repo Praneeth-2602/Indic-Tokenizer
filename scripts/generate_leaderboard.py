@@ -4,6 +4,8 @@ import argparse
 import json
 from pathlib import Path
 
+from run_benchmark import run_benchmark
+
 
 def generate_leaderboard(input_json: str | Path, output_html: str | Path) -> Path:
     rows = json.loads(Path(input_json).read_text(encoding="utf-8"))
@@ -49,10 +51,21 @@ def generate_leaderboard(input_json: str | Path, output_html: str | Path) -> Pat
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate static leaderboard HTML")
-    parser.add_argument("input_json")
+    parser.add_argument("input_json", nargs="?")
     parser.add_argument("--output", default="docs/leaderboard.html")
+    parser.add_argument("--model", default=None)
+    parser.add_argument("--benchmark-dir", default="benchmarks/data")
+    parser.add_argument("--langs", nargs="*", default=None)
+    parser.add_argument("--include-optional", action="store_true")
     args = parser.parse_args(argv)
-    generate_leaderboard(args.input_json, args.output)
+    input_json = args.input_json
+    if input_json is None:
+        rows = run_benchmark(args.model, args.benchmark_dir, args.langs, args.include_optional)
+        tmp = Path("benchmarks/results.json")
+        tmp.parent.mkdir(parents=True, exist_ok=True)
+        tmp.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+        input_json = str(tmp)
+    generate_leaderboard(input_json, args.output)
     return 0
 
 

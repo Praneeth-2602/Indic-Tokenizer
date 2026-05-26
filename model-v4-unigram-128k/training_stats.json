@@ -1,0 +1,71 @@
+{
+  "langs": [
+    "hi",
+    "bn",
+    "ta",
+    "te"
+  ],
+  "missing_langs": [],
+  "allocation": {
+    "hi": 31935,
+    "bn": 31935,
+    "ta": 31935,
+    "te": 31934
+  },
+  "corpus_audit": {
+    "hi": {
+      "lines": 477861,
+      "duplicate_lines": 9,
+      "duplicate_rate": 1.883392869474596e-05,
+      "non_native_script_lines": 4,
+      "non_native_script_rate": 8.37063497544265e-06,
+      "htmlish_lines": 2,
+      "avg_chars_per_line": 237.14568880908882
+    },
+    "bn": {
+      "lines": 472345,
+      "duplicate_lines": 21,
+      "duplicate_rate": 4.4459028887783295e-05,
+      "non_native_script_lines": 10,
+      "non_native_script_rate": 2.1170966137039663e-05,
+      "htmlish_lines": 9,
+      "avg_chars_per_line": 265.33356339116534
+    },
+    "ta": {
+      "lines": 468760,
+      "duplicate_lines": 45,
+      "duplicate_rate": 9.599795204368973e-05,
+      "non_native_script_lines": 27,
+      "non_native_script_rate": 5.759877122621384e-05,
+      "htmlish_lines": 6,
+      "avg_chars_per_line": 275.7720987285605
+    },
+    "te": {
+      "lines": 475748,
+      "duplicate_lines": 28,
+      "duplicate_rate": 5.885468777588135e-05,
+      "non_native_script_lines": 1,
+      "non_native_script_rate": 2.1019531348529054e-06,
+      "htmlish_lines": 1,
+      "avg_chars_per_line": 256.60891059972926
+    }
+  },
+  "cleaning": {
+    "enabled": true,
+    "min_line_chars": 20,
+    "dropped_lines": {
+      "hi": 22142,
+      "bn": 27656,
+      "ta": 31269,
+      "te": 24253
+    }
+  },
+  "morpheme_hints": "auto",
+  "sentencepiece": true,
+  "fertility": {
+    "hi": 2.4032629497200824,
+    "bn": 3.056439206785465,
+    "ta": 3.798205217263306,
+    "te": 3.8673103941671156
+  }
+}

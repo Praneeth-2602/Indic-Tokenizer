@@ -7,6 +7,7 @@ import sys
 import tempfile
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON_SRC = ROOT / "python"
@@ -420,8 +421,9 @@ def _fertility_stats(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Train an inditok vocabulary")
-    parser.add_argument("--data-dir", required=True)
-    parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--config", type=Path, help="JSON config file with train.py arguments")
+    parser.add_argument("--data-dir")
+    parser.add_argument("--output-dir")
     parser.add_argument("--vocab-size", type=int, default=64000)
     parser.add_argument("--langs", default=None)
     parser.add_argument("--min-frequency", type=int, default=2)
@@ -433,6 +435,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-clean-corpus", dest="clean_corpus", action="store_false")
     parser.add_argument("--min-line-chars", type=int, default=20)
     args = parser.parse_args(argv)
+    if args.config:
+        config = _load_config(args.config)
+        parser.set_defaults(**config)
+        args = parser.parse_args(argv)
+    if not args.data_dir or not args.output_dir:
+        parser.error("--data-dir and --output-dir are required unless provided by --config")
     stats = train(
         args.data_dir,
         args.output_dir,
@@ -448,6 +456,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(json.dumps(stats["fertility"], ensure_ascii=False, indent=2))
     return 0
+
+
+def _load_config(path: Path) -> dict[str, Any]:
+    config = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(config, dict):
+        raise ValueError("training config must be a JSON object")
+    if "langs" in config and isinstance(config["langs"], list):
+        config["langs"] = ",".join(config["langs"])
+    return config
 
 
 if __name__ == "__main__":

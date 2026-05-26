@@ -257,7 +257,12 @@ impl IndicTokenizer {
 
         for text in texts {
             total_words += text.split_whitespace().count();
-            total_tokens += self.encode_with_lang(text, lang).ids.len();
+            total_tokens += self
+                .encode_with_lang(text, lang)
+                .tokens
+                .iter()
+                .filter(|token| token.as_str() != SPACE_TOKEN)
+                .count();
         }
 
         FertilityReport {

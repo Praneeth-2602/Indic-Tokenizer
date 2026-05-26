@@ -10,6 +10,14 @@ def test_fertility_report_shape():
     assert report["total_sentences"] == 2
 
 
+def test_fertility_excludes_space_tokens():
+    tok = IndicTokenizer()
+    report = tok.fertility(["नमस्ते भारत"], lang="hi")
+    encoded = tok.encode_with_tokens("नमस्ते भारत", lang="hi")
+    assert " " in encoded.tokens
+    assert report["total_tokens"] == sum(token != " " for token in encoded.tokens)
+
+
 def test_evaluate_fertility_returns_structure(tmp_path):
     (tmp_path / "hi.txt").write_text("नमस्ते भारत\n", encoding="utf-8")
     results = evaluate_fertility(IndicTokenizer(), "inditok", tmp_path)

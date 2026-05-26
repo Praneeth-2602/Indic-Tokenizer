@@ -134,12 +134,17 @@ class IndicTokenizer:
         return list(self._inner.pre_tokenize(text, lang, code_mix))
 
     def fertility(self, texts: Iterable[str], lang: str | None = None) -> dict[str, object]:
-        report = self._inner.fertility(list(texts), lang)
+        text_list = list(texts)
+        total_words = sum(len(text.split()) for text in text_list)
+        total_tokens = sum(
+            sum(token != " " for token in self.encode_with_tokens(text, lang=lang).tokens)
+            for text in text_list
+        )
         return {
-            "fertility": float(report.fertility),
-            "total_tokens": int(report.total_tokens),
-            "total_words": int(report.total_words),
-            "total_sentences": int(report.total_sentences),
+            "fertility": total_tokens / max(total_words, 1),
+            "total_tokens": total_tokens,
+            "total_words": total_words,
+            "total_sentences": len(text_list),
         }
 
     @property

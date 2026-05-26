@@ -42,16 +42,8 @@ def _inditok_piece_variants(piece: str) -> list[str]:
     if piece in SPECIAL_TOKENS:
         return [piece]
 
-    normalized = piece.replace("▁", " ").replace(MORPHEME_BOUNDARY, "")
-    variants = [normalized]
-    stripped = normalized.strip()
-    if stripped and stripped != normalized:
-        variants.append(stripped)
-    if piece.startswith("▁") and piece[1:]:
-        variants.append(piece[1:])
-
-    seen = set()
-    return [item for item in variants if item and not (item in seen or seen.add(item))]
+    clean = piece.replace("▁", "").replace(MORPHEME_BOUNDARY, "")
+    return [clean] if clean else []
 
 
 def _synthesize_merges(pieces: list[str]) -> str:

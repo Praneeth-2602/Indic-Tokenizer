@@ -26,4 +26,5 @@ jobs:
         run: maturin develop
       - name: Python tests
         run: pytest
-
+      - name: Throughput regression check
+        run: python benchmarks/bench_tokenizers.py --assert-min-chars-per-second 500000

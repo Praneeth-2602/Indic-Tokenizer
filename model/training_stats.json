@@ -1,0 +1,61 @@
+{
+  "langs": [
+    "bn",
+    "hi",
+    "ta",
+    "te"
+  ],
+  "missing_langs": [],
+  "allocation": {
+    "bn": 273141,
+    "hi": 333653,
+    "ta": 214777,
+    "te": 202168
+  },
+  "corpus_audit": {
+    "bn": {
+      "lines": 88,
+      "duplicate_lines": 0,
+      "duplicate_rate": 0.0,
+      "non_native_script_lines": 0,
+      "non_native_script_rate": 0.0,
+      "htmlish_lines": 0,
+      "avg_chars_per_line": 51.26136363636363
+    },
+    "hi": {
+      "lines": 100,
+      "duplicate_lines": 0,
+      "duplicate_rate": 0.0,
+      "non_native_script_lines": 0,
+      "non_native_script_rate": 0.0,
+      "htmlish_lines": 0,
+      "avg_chars_per_line": 53.9
+    },
+    "ta": {
+      "lines": 60,
+      "duplicate_lines": 0,
+      "duplicate_rate": 0.0,
+      "non_native_script_lines": 0,
+      "non_native_script_rate": 0.0,
+      "htmlish_lines": 0,
+      "avg_chars_per_line": 60.43333333333333
+    },
+    "te": {
+      "lines": 59,
+      "duplicate_lines": 0,
+      "duplicate_rate": 0.0,
+      "non_native_script_lines": 0,
+      "non_native_script_rate": 0.0,
+      "htmlish_lines": 0,
+      "avg_chars_per_line": 57.54237288135593
+    }
+  },
+  "morpheme_hints": "auto",
+  "sentencepiece": true,
+  "fertility": {
+    "bn": 2.7374461979913915,
+    "hi": 2.132947976878613,
+    "ta": 2.5861244019138754,
+    "te": 2.1673553719008263
+  }
+}

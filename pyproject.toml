@@ -38,6 +38,9 @@ evaluation = [
   "tiktoken>=0.7",
   "transformers>=4.40",
 ]
+hub = [
+  "huggingface_hub>=0.23",
+]
 
 [project.scripts]
 inditok = "inditok.cli:main"

@@ -1,0 +1,12 @@
+{
+  "data_dir": "./data",
+  "output_dir": "./model-hinglish-32k",
+  "vocab_size": 32000,
+  "langs": ["hi", "en", "hinglish"],
+  "model_type": "bpe",
+  "allocation": "proportional",
+  "morpheme_hints": "none",
+  "character_coverage": 0.9999,
+  "clean_corpus": true,
+  "min_line_chars": 10
+}

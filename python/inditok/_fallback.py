@@ -134,7 +134,10 @@ class IndicTokenizer:
     def fertility(self, texts: Iterable[str], lang: str | None = None) -> object:
         texts = list(texts)
         total_words = sum(len(text.split()) for text in texts)
-        total_tokens = sum(len(self.encode(text, lang)) for text in texts)
+        total_tokens = sum(
+            sum(token != SPACE_TOKEN for token in self.encode_with_tokens(text, lang).tokens)
+            for text in texts
+        )
         return type(
             "FertilityReport",
             (),
