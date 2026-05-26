@@ -3,44 +3,44 @@
     "lang": "hi",
     "lang_name": "Hindi",
     "tokenizer_name": "inditok",
-    "fertility": 0.3333333333333333,
+    "fertility": 1.6666666666666667,
     "vocab_coverage": 1.0,
     "unk_rate": 0.0,
-    "chars_per_token": 15.0,
+    "chars_per_token": 3.0,
     "total_words": 6,
-    "total_tokens": 2
+    "total_tokens": 10
   },
   {
     "lang": "bn",
     "lang_name": "Bengali",
     "tokenizer_name": "inditok",
-    "fertility": 0.4,
+    "fertility": 1.8,
     "vocab_coverage": 1.0,
     "unk_rate": 0.0,
-    "chars_per_token": 14.5,
+    "chars_per_token": 3.2222222222222223,
     "total_words": 5,
-    "total_tokens": 2
+    "total_tokens": 9
   },
   {
     "lang": "ta",
     "lang_name": "Tamil",
     "tokenizer_name": "inditok",
-    "fertility": 0.4,
+    "fertility": 2.0,
     "vocab_coverage": 1.0,
     "unk_rate": 0.0,
-    "chars_per_token": 16.5,
+    "chars_per_token": 3.3,
     "total_words": 5,
-    "total_tokens": 2
+    "total_tokens": 10
   },
   {
     "lang": "te",
     "lang_name": "Telugu",
     "tokenizer_name": "inditok",
-    "fertility": 0.4,
+    "fertility": 4.6,
     "vocab_coverage": 1.0,
     "unk_rate": 0.0,
-    "chars_per_token": 18.0,
+    "chars_per_token": 1.565217391304348,
     "total_words": 5,
-    "total_tokens": 2
+    "total_tokens": 23
   }
 ]
