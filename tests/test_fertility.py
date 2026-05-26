@@ -23,6 +23,7 @@ def test_evaluate_fertility_returns_structure(tmp_path):
     results = evaluate_fertility(IndicTokenizer(), "inditok", tmp_path)
     assert results[0].lang == "hi"
     assert results[0].fertility > 0
+    assert results[0].total_tokens == 2
 
 
 def test_compare_tokenizers_markdown(tmp_path):

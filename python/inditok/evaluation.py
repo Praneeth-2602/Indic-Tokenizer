@@ -68,11 +68,14 @@ def evaluate_fertility(
         total_tokens = 0
         unk_tokens = 0
         for text in texts:
-            ids = _call_encode(encode, text, lang)
-            total_tokens += len(ids)
             if hasattr(tokenizer, "encode_with_tokens"):
                 out = tokenizer.encode_with_tokens(text, lang=lang)
+                counted_tokens = [token for token in out.tokens if token != " "]
+                total_tokens += len(counted_tokens)
                 unk_tokens += sum(token == "<unk>" for token in out.tokens)
+            else:
+                ids = _call_encode(encode, text, lang)
+                total_tokens += len(ids)
         fertility = total_tokens / max(total_words, 1)
         unk_rate = unk_tokens / max(total_tokens, 1)
         results.append(
