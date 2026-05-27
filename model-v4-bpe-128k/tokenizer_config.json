@@ -1,0 +1,9 @@
+{
+  "tokenizer_class": "IndicHFTokenizer",
+  "model_max_length": 512,
+  "bos_token": "<s>",
+  "eos_token": "</s>",
+  "unk_token": "<unk>",
+  "pad_token": "<pad>",
+  "mask_token": "<mask>"
+}

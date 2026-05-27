@@ -34,6 +34,14 @@ LANG_NAMES = {
     "ur": "Urdu",
 }
 
+BENCHMARK_FILE_ALIASES = {
+    "bn": "ben",
+    "hi": "hin",
+    "ta": "tam",
+    "te": "tel",
+}
+BENCHMARK_LANG_ALIASES = {alias: lang for lang, alias in BENCHMARK_FILE_ALIASES.items()}
+
 
 @dataclass
 class FertilityResult:
@@ -56,11 +64,11 @@ def evaluate_fertility(
 ) -> list[FertilityResult]:
     encode = tokenizer if callable(tokenizer) else getattr(tokenizer, "encode")
     root = Path(benchmark_dir)
-    selected = langs or sorted(path.stem for path in root.glob("*.txt"))
+    selected = _selected_langs(root, langs)
     results = []
     for lang in selected:
-        path = root / f"{lang}.txt"
-        if not path.exists():
+        path = _resolve_benchmark_file(root, lang)
+        if path is None:
             continue
         texts = [line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
         total_words = sum(len(text.split()) for text in texts)
@@ -92,6 +100,37 @@ def evaluate_fertility(
             )
         )
     return results
+
+
+def _selected_langs(root: Path, langs: list[str] | None) -> list[str]:
+    if langs:
+        return [_canonical_lang(lang) for lang in langs]
+
+    selected: list[str] = []
+    seen: set[str] = set()
+    for path in sorted(root.glob("*.txt")):
+        lang = _canonical_lang(path.stem)
+        if lang in seen:
+            continue
+        seen.add(lang)
+        selected.append(lang)
+    return selected
+
+
+def _canonical_lang(lang: str) -> str:
+    return BENCHMARK_LANG_ALIASES.get(lang, lang)
+
+
+def _resolve_benchmark_file(root: Path, lang: str) -> Path | None:
+    lang = _canonical_lang(lang)
+    candidates = [root / f"{lang}.txt"]
+    alias = BENCHMARK_FILE_ALIASES.get(lang)
+    if alias:
+        candidates.append(root / f"{alias}.txt")
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
 
 
 def compare_tokenizers(

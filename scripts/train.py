@@ -256,7 +256,7 @@ def _try_sentencepiece_train(
             normalization_rule_name="identity",
             hard_vocab_limit=False,
         )
-        convert_sentencepiece_model(f"{prefix}.model", output_root)
+        convert_sentencepiece_model(f"{prefix}.model", output_root, expected_vocab_size=vocab_size)
     return True
 
 

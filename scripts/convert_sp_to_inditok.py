@@ -11,7 +11,11 @@ BYTE_TOKENS = [f"<0x{idx:02X}>" for idx in range(256)]
 MORPHEME_BOUNDARY = "\u2063"
 
 
-def convert_sentencepiece_model(model_path: str | Path, output_dir: str | Path) -> tuple[Path, Path]:
+def convert_sentencepiece_model(
+    model_path: str | Path,
+    output_dir: str | Path,
+    expected_vocab_size: int | None = None,
+) -> tuple[Path, Path]:
     try:
         import sentencepiece as spm
     except ImportError as exc:  # pragma: no cover
@@ -22,10 +26,29 @@ def convert_sentencepiece_model(model_path: str | Path, output_dir: str | Path) 
     learned_pieces: list[str] = []
     for token in SPECIAL_TOKENS + BYTE_TOKENS:
         vocab.setdefault(token, len(vocab))
+    target_vocab_size = expected_vocab_size or processor.get_piece_size()
+    duplicate_pieces: set[str] = set()
+    empty_pieces = 0
+    seen_pieces: set[str] = set()
     for idx in range(processor.get_piece_size()):
-        for piece in _inditok_piece_variants(processor.id_to_piece(idx)):
+        variants = _inditok_piece_variants(processor.id_to_piece(idx))
+        for piece in variants:
+            if piece in seen_pieces:
+                duplicate_pieces.add(piece)
+            seen_pieces.add(piece)
             vocab.setdefault(piece, len(vocab))
-            learned_pieces.append(piece)
+            if piece not in vocab:
+                vocab[piece] = len(vocab)
+                learned_pieces.append(piece)
+        if not variants:
+            empty_pieces += 1
+
+    _assert_vocab_size(
+        actual=len(vocab),
+        expected=target_vocab_size,
+        duplicate_count=len(duplicate_pieces),
+        empty_count=empty_pieces,
+    )
 
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
@@ -41,9 +64,31 @@ def _inditok_piece_variants(piece: str) -> list[str]:
         return [piece]
     if piece in SPECIAL_TOKENS:
         return [piece]
+    # Remove morpheme boundary but preserve SentencePiece word-start marker '▁'.
+    # Map '▁' to an explicit marker 'Ġ' (GPT-style) so tokens that start with
+    # the boundary remain distinct from those that do not.
+    clean = piece.replace(MORPHEME_BOUNDARY, "")
+    clean = clean.replace("▁", "Ġ")
+    # Normalize for stability (NFC helps merge stability across inputs).
+    clean = unicodedata.normalize("NFC", clean)
 
-    clean = piece.replace("▁", "").replace(MORPHEME_BOUNDARY, "")
     return [clean] if clean else []
+
+
+def _assert_vocab_size(
+    actual: int,
+    expected: int,
+    duplicate_count: int = 0,
+    empty_count: int = 0,
+) -> None:
+    if actual >= expected * 0.99:
+        return
+    raise RuntimeError(
+        f"Converted vocab has {actual} entries, expected ~{expected}. "
+        "SentencePiece may have emitted duplicate or empty pieces. "
+        f"Observed {duplicate_count} duplicate converted pieces and {empty_count} empty pieces. "
+        "Inspect the .model file with `spm_export_vocab`."
+    )
 
 
 def _synthesize_merges(pieces: list[str]) -> str:
@@ -76,21 +121,31 @@ def _skip_merge_piece(piece: str) -> bool:
 
 
 def _clusters(text: str) -> list[str]:
-    clusters: list[str] = []
-    for ch in text:
-        if clusters and (unicodedata.combining(ch) or unicodedata.category(ch).startswith("M")):
-            clusters[-1] += ch
-        else:
-            clusters.append(ch)
-    return clusters
+    try:
+        import regex as _regex  # type: ignore
+    except ImportError:
+        # Fallback: approximate grapheme clustering using combining marks
+        clusters: list[str] = []
+        for ch in text:
+            if clusters and (unicodedata.combining(ch) or unicodedata.category(ch).startswith("M")):
+                clusters[-1] += ch
+            else:
+                clusters.append(ch)
+        return clusters
+
+    # Use the `regex` package's \X to get extended grapheme clusters.
+    # This is important for correct segmentation in Telugu/Tamil and other
+    # Indic scripts that rely on complex grapheme rules.
+    return _regex.findall(r"\X", text)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Convert SentencePiece to inditok files")
     parser.add_argument("model")
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--expected-vocab-size", type=int, default=None)
     args = parser.parse_args(argv)
-    convert_sentencepiece_model(args.model, args.output_dir)
+    convert_sentencepiece_model(args.model, args.output_dir, args.expected_vocab_size)
     return 0
 
 

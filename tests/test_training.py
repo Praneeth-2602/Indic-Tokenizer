@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from train import MORPHEME_BOUNDARY, audit_corpus, clean_line, inject_morpheme_hints, train  # noqa: E402
-from convert_sp_to_inditok import _inditok_piece_variants  # noqa: E402
+from convert_sp_to_inditok import _assert_vocab_size, _inditok_piece_variants  # noqa: E402
 
 
 def test_train_creates_valid_vocab(tmp_path):
@@ -44,3 +44,13 @@ def test_audit_corpus_reports_duplicates_and_htmlish():
 def test_sentencepiece_piece_conversion_is_canonical():
     assert _inditok_piece_variants("▁தமிழ்") == ["தமிழ்"]
     assert _inditok_piece_variants(f"▁படி{MORPHEME_BOUNDARY}க்கிறேன்") == ["படிக்கிறேன்"]
+
+
+def test_sentencepiece_conversion_rejects_large_vocab_shortfall():
+    try:
+        _assert_vocab_size(actual=116_121, expected=128_000, duplicate_count=10_000, empty_count=1)
+    except RuntimeError as exc:
+        assert "Converted vocab has 116121 entries" in str(exc)
+        assert "duplicate" in str(exc)
+    else:
+        raise AssertionError("Expected vocab shortfall to fail conversion")
