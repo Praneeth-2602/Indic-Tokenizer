@@ -22,6 +22,7 @@ dependencies = []
 [project.optional-dependencies]
 dev = [
   "maturin>=1.5,<2",
+  "hypothesis>=6",
   "pytest>=8",
   "transformers>=4.40",
   "tokenizers>=0.15",
