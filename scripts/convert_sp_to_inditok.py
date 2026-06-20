@@ -62,14 +62,12 @@ def convert_sentencepiece_model(
 def _inditok_piece_variants(piece: str) -> list[str]:
     if piece.startswith("<0x") and piece.endswith(">"):
         return [piece]
+
     if piece in SPECIAL_TOKENS:
         return [piece]
-    # Remove morpheme boundary but preserve SentencePiece word-start marker '▁'.
-    # Map '▁' to an explicit marker 'Ġ' (GPT-style) so tokens that start with
-    # the boundary remain distinct from those that do not.
-    clean = piece.replace(MORPHEME_BOUNDARY, "")
-    clean = clean.replace("▁", "Ġ")
-    # Normalize for stability (NFC helps merge stability across inputs).
+
+    clean = piece.replace("▁", "Ġ")
+    clean = clean.replace(MORPHEME_BOUNDARY, "")
     clean = unicodedata.normalize("NFC", clean)
 
     return [clean] if clean else []
